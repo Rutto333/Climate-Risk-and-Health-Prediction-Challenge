@@ -196,5 +196,3 @@ without further validation and domain expertise.
 
 **Elkanah Rutto**
 
-Update this section with your preferred contact details and links to the
-project repository.
