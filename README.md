@@ -1,198 +1,89 @@
-# Climate-Linked Mortality Prediction
+# Climate & Health Risk Prediction 🌍
 
-## Overview
+A supervised machine learning project for the [Zindi Climate Risk & Health Prediction Challenge](https://zindi.world/competitions/climate-risk-health-prediction-challenge). The project combines mortality records with demographic, geographic, and climate features to predict whether a recorded death is classified as climate-sensitive.
 
-This project explores whether a recorded death belongs to a
-**climate-sensitive category** using supervised machine learning. It
-combines health, demographic, geographic, and climate-related features
-to estimate the probability that a death is climate-sensitive.
+## 🎯 Objective
 
-The project is designed for a multi-metric machine learning challenge in
-which the final score combines **F1-Score** and **ROC-AUC**. The goal is
-to build a model that identifies climate-sensitive cases while also
-ranking positive cases above negative cases effectively.
+Predict `is_climate_sensitive` using demographic and environmental data, leveraging machine learning to identify patterns associated with climate-sensitive mortality.
 
-> **Important:** Predictive patterns do not establish that climate
-> conditions caused an individual death. Findings should be interpreted
-> as associations in the available data, with attention to data quality,
-> bias, and uncertainty.
+## 📊 Dataset
 
-## Problem Statement
+- Training data: 3,146 records
+- Test data: 1,030 records
+- Supplementary climate data: 4,176 records
 
-Given a set of records containing health, demographic, geographic, and
-environmental information, predict:
+Climate features are merged using `ID`. Features include age, gender, location, temperature, rainfall, NDVI, and engineered temporal and environmental variables.
 
-1.  A binary class indicating whether the death is climate-sensitive.
-2.  A probability representing the model's estimated likelihood that the
-    death is climate-sensitive.
+## ⚙️ Methodology
 
-## Evaluation Metric
+1. Data loading and integration
+2. Exploratory data analysis
+3. Feature engineering and preprocessing
+4. Stratified 5-fold cross-validation
+5. CatBoost model training and evaluation
+6. Test prediction and submission generation
 
-The leaderboard score is a weighted combination of two metrics:
+## 🤖 Model
 
-  ------------------------------------------------------------------------
-  Metric                                      Weight What it measures
-  --------------------- ---------------------------- ---------------------
-  F1-Score                                       60% Balance between
-                                                     precision and recall
-                                                     for the positive
-                                                     class
+**CatBoostClassifier**
+- Iterations: 10,000
+- Learning rate: 0.03
+- Evaluation metric: ROC-AUC
+- Early stopping: 150 rounds
+- Cross-validation: 5 folds
 
-  ROC-AUC                                        40% How well predicted
-                                                     probabilities rank
-                                                     positive cases above
-                                                     negative cases
-  ------------------------------------------------------------------------
+## 📈 Validation Results
 
-The combined score is:
+| Metric | Score |
+|---|---:|
+| Accuracy | 0.7495 |
+| Precision | 0.7671 |
+| Recall | 0.8832 |
+| F1-Score | 0.8211 |
+| ROC-AUC | 0.8191 |
+| Weighted Score | 0.8203 |
 
-\[ `\text{Final Score}`{=tex} = 0.60
-`\times `{=tex}`\text{F1-Score}`{=tex} + 0.40
-`\times `{=tex}`\text{ROC-AUC}`{=tex} \]
+The challenge score combines F1-Score (60%) and ROC-AUC (40%). The reported F1-Score and weighted score use a threshold of 0.45; the final submission uses the required **0.5 threshold** for binary predictions.
 
-### Prediction and submission rules
+## 🔑 Top Features
 
--   `TargetF1` must contain binary predictions generated using the
-    **default probability threshold of 0.5**.
--   Do **not** tune or apply a different threshold for the binary
-    predictions.
--   `TargetRAUC` must contain the predicted probability for the
-    climate-sensitive class (class `1`).
--   Include the test record identifier in the `ID` column.
--   Preserve the required column names and submission format.
+1. `year`
+2. `age`
+3. `age_cat`
+4. `ndvi_90d`
+5. `tavg_30d`
 
-Example:
+Feature importance reflects predictive contribution, not causation.
 
-  ID            TargetF1   TargetRAUC
-  ----------- ---------- ------------
-  ID_XYZ4AL            0         0.45
-  ID_XTLAUX            0         0.32
+## 🛠️ Technologies
 
-## Workflow
+Python · Pandas · NumPy · Matplotlib · Seaborn · Scikit-learn · CatBoost
 
-1.  **Data understanding** --- inspect the training and test data,
-    target distribution, data types, missing values, and duplicate
-    records.
-2.  **Exploratory data analysis** --- examine mortality labels alongside
-    demographic, geographic, and climate variables.
-3.  **Data preprocessing** --- handle missing values, encode categorical
-    features, and scale numerical features when required by the model.
-4.  **Feature engineering** --- where supported by the available
-    columns, derive useful climate features such as temperature range,
-    rainfall intensity, recent-to-long-term rainfall ratios, and
-    temporal changes.
-5.  **Model training** --- train and compare suitable supervised
-    classifiers.
-6.  **Validation** --- use a reproducible validation strategy and assess
-    both F1-Score and ROC-AUC.
-7.  **Probability generation** --- generate class-1 probabilities for
-    the test dataset.
-8.  **Submission preparation** --- create the required two prediction
-    columns and export them with the record ID.
+## 📁 Repository Structure
 
-## Potential Models
-
-Models worth comparing include:
-
--   Logistic Regression as a baseline.
--   Random Forest.
--   XGBoost.
--   CatBoost.
--   Support Vector Machine (SVM), with preprocessing where needed.
-
-Model choice should be based on validation performance, data
-characteristics, and practical constraints. Use pipelines where possible
-to keep preprocessing consistent between training and inference.
-
-## Example Submission Code
-
-The following example assumes that `test_df` contains the identifier
-column `ID` and that `model` is already trained. Replace `ID` and the
-feature-selection logic with the actual column names used in the
-dataset.
-
-``` python
-import pandas as pd
-
-# Keep the test identifiers
-submission = pd.DataFrame({
-    "ID": test_df["ID"],
-    "TargetRAUC": model.predict_proba(X_test)[:, 1],
-})
-
-# Required default threshold: 0.5
-submission["TargetF1"] = (
-    submission["TargetRAUC"] >= 0.5
-).astype(int)
-
-# Required column order
-submission = submission[["ID", "TargetF1", "TargetRAUC"]]
-
-submission.to_csv("submission.csv", index=False)
+```text
+climate-related-deaths/
+├── climate-related-deaths.ipynb
+├── README.md
+└── submission.csv
 ```
 
-Confirm that the model supports `predict_proba`. If it does not, use an
-appropriate probability-calibration approach or a model that provides
-probabilities. Fit any calibration method using training/validation data
-only; never fit it using the test labels.
+## 🚀 Getting Started
 
-## Recommended Validation
+1. Clone the repository.
+2. Install the required libraries.
+3. Download the competition datasets from Zindi.
+4. Update dataset paths in the notebook.
+5. Run the notebook to train the model and generate predictions.
 
--   Use a stratified train/validation split when appropriate for the
-    target distribution.
--   Consider cross-validation for a more reliable estimate of
-    performance.
--   Calculate F1-Score using binary predictions at the fixed threshold
-    of 0.5.
--   Calculate ROC-AUC using predicted probabilities, not binary
-    predictions.
--   Check for data leakage, especially from identifiers, post-outcome
-    fields, or variables that directly encode the target.
--   If records are grouped by location or time, consider validation
-    splits that test generalization to unseen locations or periods.
-
-## Suggested Project Structure
-
-``` text
-climate-linked-mortality/
-├── data/
-│   ├── train.csv
-│   └── test.csv
-├── notebooks/
-│   └── exploratory-analysis.ipynb
-├── src/
-│   ├── preprocessing.py
-│   ├── features.py
-│   └── train.py
-├── submission.csv
-├── requirements.txt
-└── README.md
+```bash
+pip install numpy pandas matplotlib seaborn scikit-learn catboost
 ```
 
-This is a suggested structure; adapt it to the files and scripts in your
-repository.
+## ⚠️ Limitations
 
-## Reproducibility
+The model identifies patterns in available data but does not establish that climate conditions caused individual deaths. Results depend on data quality, coverage, and representativeness.
 
--   Set random seeds where supported.
--   Keep preprocessing and feature engineering consistent across
-    training and test data.
--   Record validation scores and model parameters.
--   Avoid using the test set to select features, tune models, or
-    calibrate probabilities.
--   Verify the final submission has no missing predictions and that all
-    probabilities lie between `0` and `1`.
-
-## Limitations and Responsible Use
-
-Climate-sensitive mortality classification is a data-driven prediction
-task, not proof of causation. Results may reflect underreporting,
-differences in access to healthcare, geographic coverage, demographic
-imbalances, or other unobserved factors. The model should not be used as
-the sole basis for individual medical decisions or policy decisions
-without further validation and domain expertise.
-
-## Author
+## 👤 Author
 
 **Elkanah Rutto**
-
